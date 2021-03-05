@@ -9,11 +9,13 @@
       href="//unpkg.com/grapesjs/dist/css/grapes.min.css"
     />
     <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="theming.css" />
     <title>Grapes JS tutorial</title>
   </head>
   <body>
     <div class="panel__top">
       <div class="panel__basic-actions"></div>
+      <div class="panel__devices"></div>
       <div class="panel__switcher"></div>
     </div>
     <div class="editor-row">
@@ -30,8 +32,54 @@
 
     <script src="//unpkg.com/grapesjs"></script>
     <script>
+      const myNewComponentType = (editor) => {
+        editor.DomComponents.addType("my-input-type", {
+          isComponent: (el) => el.tagName === "INPUT",
+          model: {
+            defaults: {
+              tagName: "input",
+              draggable: "form, form *",
+              droppable: false,
+              testprop: 1,
+              attributes: {
+                type: "text",
+                name: "default-name",
+                placeholder: "Insert text here",
+              },
+              traits: [
+                "name",
+                "placeholder",
+                { type: "checkbox", name: "required" },
+              ],
+            },
+          },
+          view: {
+            tagName: "div",
+            events: {
+              click: "clickOnElement",
+              "dblclick .inner-el": "innerElClick",
+            },
+
+            clickOnElement(ev) {
+              ev.stopPropagation();
+              console.log("Clicked");
+            },
+            innerElClick(ev) {
+              ev.stopPropagation();
+              this.model.component("Update inner component");
+            },
+          },
+        });
+      };
+      let a = "test";
+      const script1 = function () {
+        alert("Hi" + a);
+        // `this` is bound to the component element
+        console.log("the element", this);
+      };
       const editor = grapesjs.init({
         container: "#gjs",
+        plugins: [myNewComponentType],
         fromElement: true,
         height: "300px",
         width: "auto",
@@ -39,7 +87,6 @@
         layerManager: {
           appendTo: ".layers-container",
         },
-        // We define a default panel as a sidebar to contain layers
         panels: {
           defaults: [
             {
@@ -82,6 +129,25 @@
                   active: true,
                   label: "Traits",
                   command: "show-traits",
+                  togglable: false,
+                },
+              ],
+            },
+            {
+              id: "panel-devices",
+              el: ".panel__devices",
+              buttons: [
+                {
+                  id: "device-desktop",
+                  label: "D",
+                  command: "set-device-desktop",
+                  active: true,
+                  togglable: false,
+                },
+                {
+                  id: "device-mobile",
+                  label: "M",
+                  command: "set-device-mobile",
                   togglable: false,
                 },
               ],
@@ -138,7 +204,6 @@
             },
           ],
         },
-
         blockManager: {
           appendTo: "#blocks",
           blocks: [
@@ -147,9 +212,9 @@
               label: "<b>Section</b>",
               attributes: { class: "gjs-block-section" },
               content: `<section>
-              <h1>This is a simple title</h1>
-              <div>This is just a Lorem text: Lorem ipsum dolor sit amet</div>
-            </section>`,
+                          <h1>This is a simple title</h1>
+                          <div>This is just a Lorem text: Lorem ipsum dolor sit amet</div>
+                        </section>`,
             },
             {
               id: "text",
@@ -165,8 +230,240 @@
             },
           ],
         },
+        deviceManager: {
+          devices: [
+            {
+              name: "Desktop",
+              width: "", // default size
+            },
+            {
+              name: "Mobile",
+              width: "320px", // this value will be used on canvas width
+              widthMedia: "480px", // this value will be used in CSS @media
+            },
+          ],
+        },
+        assetManager: {
+          assets: [
+            {
+              type: "image",
+              src: "http://placehold.it/350x250/78c5d6/fff/image1.jpg",
+              width: "350px",
+              height: "250px",
+            },
+            {
+              src:
+                "https://via.placeholder.com/300.png/09f/fff%20C/O%20https://placeholder.com/",
+              width: "350px",
+              height: "250px",
+            },
+          ],
+
+          noAssets:
+            "There are no <b> assets </b> here at the moment. Please drop something.",
+          upload: 0,
+          uploadName: "files",
+          openAssetsOnDrop: 1,
+          modalTitle: "Idemo breee",
+        },
+      });
+      // editor.Components.addType("comp-with-js", {
+      //   model: {
+      //     defaults: {
+      //       script: script1,
+      //       style: {
+      //         width: "100px",
+      //         height: "100px",
+      //         backgroundColor: "red",
+      //       },
+      //     },
+      //   },
+      // });
+      const script = function (props) {
+        const myLibProps = {
+          prop1: props.myprop1,
+          prop2: props.myprop2,
+        };
+        console.log(myLibProps);
+      };
+      editor.Components.addType("comp-with-js", {
+        model: {
+          defaults: {
+            script,
+            // Define default values for your custom properties
+            myprop1: "value1",
+            myprop2: "10",
+            // Define traits, in order to change your properties
+            traits: [
+              {
+                type: "select",
+                name: "myprop1",
+                changeProp: true,
+                options: [
+                  { value: "value1", name: "Value 1" },
+                  { value: "value2", name: "Value 2" },
+                ],
+              },
+              {
+                type: "number",
+                name: "myprop2",
+                changeProp: true,
+              },
+            ],
+            // Define which properties to pass (this will also reset your script on their changes)
+            "script-props": ["myprop1", "myprop2"],
+            // ...
+          },
+        },
+      });
+      editor.Blocks.add("comp-with-javascript", {
+        label: " Component with JS",
+        attributes: { class: "fa fa-text" },
+        content: { type: "comp-with-js" },
+      });
+      editor.Blocks.add("test-block", {
+        label: "Test block",
+        attributes: { class: "fa fa-text" },
+      });
+      editor.DomComponents.addType("test-component", {
+        model: {
+          defaults: {
+            testprop: 1,
+          },
+          init() {
+            console.log("Local hook: model.init");
+            this.listenTo(this, "change:testprop", this.handlePropChange);
+            // Here we can listen global hooks with editor.on('...')
+          },
+          updated(property, value, prevValue) {
+            console.log(
+              "Local hook: model.updated",
+              "property",
+              property,
+              "value",
+              value,
+              "prevValue",
+              prevValue
+            );
+          },
+          removed() {
+            console.log("Local hook: model.removed");
+          },
+          handlePropChange() {
+            console.log("The value of testprop", this.get("testprop"));
+          },
+        },
+        view: {
+          init() {
+            console.log("Local hook: view.init");
+          },
+          onRender() {
+            console.log("Local hook: view.onRender");
+          },
+        },
       });
 
+      // A block for the custom component
+      editor.BlockManager.add("test-component", {
+        label: "Test Component",
+        content: '<div data-gjs-type="test-component">Test Component</div>',
+      });
+
+      // Global hooks
+      editor.on(`component:create`, (model) =>
+        console.log("Global hook: component:create", model.get("type"))
+      );
+      editor.on(`component:mount`, (model) =>
+        console.log("Global hook: component:mount", model.get("type"))
+      );
+      editor.on(`component:update:testprop`, (model) =>
+        console.log("Global hook: component:update:testprop", model.get("type"))
+      );
+      editor.on(`component:remove`, (model) =>
+        console.log("Global hook: component:remove", model.get("type"))
+      );
+      const am = editor.AssetManager;
+      const blockManager = editor.BlockManager;
+      blockManager.add("my-first-block", {
+        label: "Simple block",
+        content: '<div class="my-block">This is a simple block</div>',
+      });
+      blockManager.get("my-first-block").set({
+        label: "Updated simple block",
+        attributes: {
+          title: "My title",
+        },
+      });
+      blockManager.add("my-map-block", {
+        label: "Simple map block",
+        content: {
+          type: "map",
+          style: {
+            height: "350px",
+          },
+          removable: false,
+        },
+      });
+      blockManager.add("the-row-block", {
+        label: "2 Columns",
+        content:
+          '<div class="row" data-gjs-droppable=".row-cell" data-gjs-custom-name="Row">' +
+          '<div class="row-cell" data-gjs-draggable=".row"></div>' +
+          '<div class="row-cell" data-gjs-draggable=".row"></div>' +
+          "</div>",
+      });
+      blockManager.add("some-block-id", {
+        label: `<div>
+            <img src="https://picsum.photos/70/70"/>
+            <div class="my-label-block">Label block</div>
+          </div>`,
+        content: "<div>...</div>",
+        //     render: ({ model, className }) => `<div class="${className}__my-wrap">
+        //   Before label
+        //   ${model.get("label")}
+        //   After label
+        // </div>`,
+        render: ({ el }) => {
+          const btn = document.createElement("button");
+          btn.innerHTML = "Click me";
+          btn.addEventListener("click", () => alert("Do something"));
+          el.appendChild(btn);
+        },
+      });
+      editor.addComponents(`<div>
+        <img src="https://path/image" />
+        <span title="foo">Hello world!!!</span>
+      </div>`);
+      const comp = editor.addComponents(
+        `<input name="my-test" title="hello"/>`
+      )[0];
+      const modelComponent = editor.getSelected();
+      editor.on("component:selected", (comp) =>
+        console.log(comp.get("tagName"))
+      );
+      editor.addComponents(
+        {
+          tagName: "div",
+          components: [
+            {
+              type: "image",
+              attributes: { src: "https://path/image" },
+            },
+            {
+              tagName: "span",
+              type: "text",
+              attributes: { title: "foo" },
+              components: [
+                {
+                  type: "textnode",
+                  content: "Hello world 2!!!",
+                },
+              ],
+            },
+          ],
+        },
+        { at: 1 }
+      );
       editor.Panels.addPanel({
         id: "panel-top",
         el: ".panel__top",
@@ -184,7 +481,6 @@
           },
           {
             id: "export",
-            active: true,
             className: "btn-open-export",
             label: "Exp",
             command: "export-template",
@@ -192,7 +488,6 @@
           },
           {
             id: "show-json",
-            active: true,
             className: "btn-show-json",
             label: "JSON",
             context: "show-json",
@@ -200,8 +495,8 @@
               editor.Modal.setTitle("Components JSON")
                 .setContent(
                   `<textarea style="width:100%; height: 250px;">
-                ${JSON.stringify(editor.getComponents())}
-              </textarea>`
+                        ${JSON.stringify(editor.getComponents())}
+                      </textarea>`
                 )
                 .open();
             },
@@ -254,6 +549,55 @@
           this.getTraitsEl(editor).style.display = "none";
         },
       });
+      editor.Commands.add("set-device-desktop", {
+        run: (editor) => editor.setDevice("Desktop"),
+      });
+      editor.Commands.add("set-device-mobile", {
+        run: (editor) => editor.setDevice("Mobile"),
+      });
+
+      am.add([
+        {
+          category: "c1",
+          src: "http://placehold.it/350x250/78c5d6/fff/image1.jpg",
+        },
+        {
+          category: "c1",
+          src: "http://placehold.it/350x250/459ba8/fff/image2.jpg",
+        },
+        {
+          category: "c2",
+          src: "http://placehold.it/350x250/79c267/fff/image3.jpg",
+        },
+      ]);
+      am.render();
+      am.addType("svg-icon", {
+        view: {
+          getPreview() {
+            return `<div style="text-align: center">${this.model.get(
+              "svgContent"
+            )}</div>`;
+          },
+          getInfo() {
+            return "<div>SVG description</div>";
+          },
+        },
+        isType(value) {
+          if (value.substring(0, 5) == "<svg ") {
+            return {
+              type: "svg-icon",
+              svgContent: value,
+            };
+          } else if (typeof value == "object" && value.type == "svg-icon") {
+            return value;
+          }
+        },
+      });
+      am.add(`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22,9 C22,8.4 21.5,8 20.75,8 L3.25,8 C2.5,8 2,8.4 2,9 L2,15 C2,15.6 2.5,16 3.25,16 L20.75,16 C21.5,16 22,15.6 22,15 L22,9 Z M21,15 L3,15 L3,9 L21,9 L21,15 Z"></path>
+              <polygon points="4 10 5 10 5 14 4 14"></polygon>
+            </svg>`);
+      am.render(am.getAll().filter((asset) => asset.get("type") == "svg-icon"));
     </script>
   </body>
 </html>
